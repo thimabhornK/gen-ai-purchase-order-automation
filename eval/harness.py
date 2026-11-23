@@ -1,15 +1,15 @@
-"""Evaluation harness for Flip to PO.
+"""Evaluation harness for Automated PO Creation.
 
 Measures two things that matter for a system that can *act* on its own output:
 
 1. Extraction quality — per-field accuracy, line exact-match, requisition
    exact-match, against gold labels.
 2. Decision safety — given the gating policy, how often we auto-issue, and, of
-   the POs we auto-issue, how often they are exactly correct (``auto_flip
+   the POs we auto-issue, how often they are exactly correct (``auto_create
    precision``), plus how reliably we route our own mistakes to a human
    (``review recall``).
 
-The headline number for a reviewer is **auto-flip precision**: the rate at which
+The headline number for a reviewer is **auto-create precision**: the rate at which
 an automatically issued PO is fully correct. The whole point of the confidence +
 validation gating is to keep that number very high even when raw extraction is
 imperfect.
@@ -22,9 +22,9 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from flip_to_po import FlipPipeline, PurchaseRequisition
-from flip_to_po.config import DEFAULT_CONFIG, PipelineConfig
-from flip_to_po.schemas import ExtractionResult, FlipDecision
+from po_creation import POCreationPipeline, PurchaseRequisition
+from po_creation.config import DEFAULT_CONFIG, PipelineConfig
+from po_creation.schemas import ExtractionResult, POCreationDecision
 
 FIELDS = ["material_code", "description", "quantity", "unit", "unit_price", "line_total"]
 MONEY_TOL = 0.01
@@ -68,28 +68,28 @@ class EvalResults:
     pr_exact: FieldCounter = field(default_factory=FieldCounter)
 
     decisions: dict[str, int] = field(default_factory=dict)
-    # 2x2 of (extraction correct?) x (auto-flipped?)
-    correct_autoflip: int = 0
+    # 2x2 of (extraction correct?) x (auto-created?)
+    correct_autocreate: int = 0
     correct_review: int = 0
-    incorrect_autoflip: int = 0  # the dangerous quadrant
+    incorrect_autocreate: int = 0  # the dangerous quadrant
     incorrect_review: int = 0
 
     latencies_ms: list[float] = field(default_factory=list)
 
     # -- derived ------------------------------------------------------- #
     @property
-    def auto_flip_rate(self) -> float:
-        af = self.decisions.get("AUTO_FLIP", 0)
+    def auto_create_rate(self) -> float:
+        af = self.decisions.get("AUTO_CREATE", 0)
         return af / self.n_prs if self.n_prs else 0.0
 
     @property
-    def auto_flip_precision(self) -> float:
-        af = self.correct_autoflip + self.incorrect_autoflip
-        return self.correct_autoflip / af if af else 1.0
+    def auto_create_precision(self) -> float:
+        af = self.correct_autocreate + self.incorrect_autocreate
+        return self.correct_autocreate / af if af else 1.0
 
     @property
     def review_recall(self) -> float:
-        errs = self.incorrect_autoflip + self.incorrect_review
+        errs = self.incorrect_autocreate + self.incorrect_review
         return self.incorrect_review / errs if errs else 1.0
 
     @property
@@ -121,12 +121,12 @@ class EvalResults:
             },
             "decisions": self.decisions,
             "safety": {
-                "auto_flip_rate": round(self.auto_flip_rate, 4),
-                "auto_flip_precision": round(self.auto_flip_precision, 4),
+                "auto_create_rate": round(self.auto_create_rate, 4),
+                "auto_create_precision": round(self.auto_create_precision, 4),
                 "review_recall": round(self.review_recall, 4),
                 "confusion": {
-                    "correct_autoflip": self.correct_autoflip,
-                    "incorrect_autoflip": self.incorrect_autoflip,
+                    "correct_autocreate": self.correct_autocreate,
+                    "incorrect_autocreate": self.incorrect_autocreate,
                     "correct_review": self.correct_review,
                     "incorrect_review": self.incorrect_review,
                 },
@@ -170,7 +170,7 @@ def evaluate(
     config: PipelineConfig = DEFAULT_CONFIG,
 ) -> EvalResults:
     dataset = json.loads(Path(dataset_path).read_text())
-    pipe = FlipPipeline(trusted_dir=trusted_dir, config=config)
+    pipe = POCreationPipeline(trusted_dir=trusted_dir, config=config)
 
     r = EvalResults()
     r.field_counters = {f: FieldCounter() for f in FIELDS}
@@ -196,13 +196,13 @@ def evaluate(
                 r.field_counters[f].add(checks[f])
         r.pr_exact.add(pr_ok)
 
-        autoflipped = result.decision is FlipDecision.AUTO_FLIP
-        if pr_ok and autoflipped:
-            r.correct_autoflip += 1
-        elif pr_ok and not autoflipped:
+        autocreated = result.decision is POCreationDecision.AUTO_CREATE
+        if pr_ok and autocreated:
+            r.correct_autocreate += 1
+        elif pr_ok and not autocreated:
             r.correct_review += 1
-        elif not pr_ok and autoflipped:
-            r.incorrect_autoflip += 1
+        elif not pr_ok and autocreated:
+            r.incorrect_autocreate += 1
         else:
             r.incorrect_review += 1
 

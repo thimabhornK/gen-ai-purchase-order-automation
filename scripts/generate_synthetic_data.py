@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a fully synthetic, reproducible dataset for Flip to PO.
+"""Generate a fully synthetic, reproducible dataset for Automated PO Creation.
 
 Writes:
 

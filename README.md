@@ -1,4 +1,4 @@
-# Flip to PO — GenAI purchase-order automation
+# Automated PO Creation — GenAI purchase-order automation
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Tests](https://img.shields.io/badge/tests-24%20passing-brightgreen)
@@ -50,7 +50,7 @@ flowchart LR
     B --> C[LLM extraction<br/>typed fields + confidence]
     C --> D[validation<br/>vs trusted sources]
     D --> E{decision gate}
-    E -->|confident & clean| F[AUTO-FLIP<br/>issue PO]
+    E -->|confident & clean| F[AUTO-CREATE<br/>issue PO]
     E -->|hard issue or<br/>low confidence| G[NEEDS REVIEW]
 ```
 
@@ -65,7 +65,7 @@ flowchart LR
    auto-issue) or **SOFT** (penalizes confidence).
 4. **Decision gating** (`validation/confidence.py`) — aggregates field confidence
    (taking the *minimum*, so one weak field is enough to trigger review) and emits
-   `AUTO_FLIP`, `NEEDS_REVIEW`, or `REJECTED` with a serializable audit trail.
+   `AUTO_CREATE`, `NEEDS_REVIEW`, or `REJECTED` with a serializable audit trail.
 
 ## Quickstart
 
@@ -83,7 +83,7 @@ Everything above runs **without an API key**. To exercise the real LLM path:
 
 ```bash
 pip install -e ".[openai]"
-export FLIP_EXTRACTION_BACKEND=openai
+export PO_EXTRACTION_BACKEND=openai
 export OPENAI_API_KEY=sk-...
 make demo
 ```
@@ -92,7 +92,7 @@ make demo
 
 On 160 synthetic requisitions (305 line items) with a deliberately noisy document
 set — about 40% of lines carry at least one OCR/extraction defect — at the default
-auto-flip threshold of **0.90**:
+auto-create threshold of **0.90**:
 
 **Field-level extraction accuracy**
 
@@ -112,11 +112,11 @@ fields.)
 
 | Metric | Value | Meaning |
 |---|---:|---|
-| Auto-flip rate | **53.8%** | share of requisitions issued automatically |
-| Auto-flip precision | **94.2%** | of auto-issued orders, share fully correct |
+| Auto-create rate | **53.8%** | share of requisitions issued automatically |
+| Auto-create precision | **94.2%** | of auto-issued orders, share fully correct |
 | Review recall | **92.7%** | of genuinely wrong orders, share caught and sent to a human |
 
-|  | auto-flipped | sent to review |
+|  | auto-created | sent to review |
 |---|---:|---:|
 | **extraction correct** | 81 | 11 |
 | **extraction incorrect** | **5** | 63 |
@@ -130,7 +130,7 @@ they're hard.
 Sweeping the confidence threshold shows the expected trade-off — automate less,
 issue more safely:
 
-| threshold | auto-flip rate | auto-flip precision | review recall | incorrect auto-flips |
+| threshold | auto-create rate | auto-create precision | review recall | incorrect auto-created POs |
 |---:|---:|---:|---:|---:|
 | 0.80 | 55.0% | 93.2% | 91.2% | 6 |
 | 0.90 | 53.8% | 94.2% | 92.7% | 5 |
@@ -164,7 +164,7 @@ real POs should be able to say precisely how often it can be wrong, and why.
 
 - **Gate on confidence × rules, not accuracy.** The product decision is binary
   (issue or don't), so the system optimizes the safety of the *issued* set, and
-  the eval measures that directly (precision/recall of the auto-flip decision),
+  the eval measures that directly (precision/recall of the auto-create decision),
   not just field accuracy.
 - **Minimum-field aggregation.** Overall confidence is the *min* across fields, not
   the mean — one shaky field pulls the whole order to review. Conservative on
@@ -188,12 +188,12 @@ real POs should be able to say precisely how often it can be wrong, and why.
 | LLM | deterministic `MockLLMExtractor` | `OpenAIExtractor` (included) or another provider |
 | Trusted sources | two JSON files | ERP vendor & contract masters |
 | Delivery | CLI demo + FastAPI endpoint | REST integration into the procurement system |
-| Monitoring | the eval harness + JSON artifacts | a live dashboard (accuracy, adoption, auto-flip rate) |
+| Monitoring | the eval harness + JSON artifacts | a live dashboard (accuracy, adoption, auto-create rate) |
 
 ## Project layout
 
 ```
-src/flip_to_po/      OCR, extraction (mock + OpenAI), validation, gating, API
+src/po_creation/     OCR, extraction (mock + OpenAI), validation, gating, API
 scripts/             synthetic-data generator, CLI demo
 eval/                evaluation harness, report, threshold sweep
 tests/               24 unit + end-to-end tests

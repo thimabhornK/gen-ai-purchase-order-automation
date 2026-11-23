@@ -6,43 +6,43 @@ import json
 
 from conftest import make_extraction, make_line
 
-from flip_to_po import FlipPipeline, PurchaseRequisition
-from flip_to_po.config import DEFAULT_CONFIG
-from flip_to_po.schemas import (
-    FlipDecision,
+from po_creation import POCreationPipeline, PurchaseRequisition
+from po_creation.config import DEFAULT_CONFIG
+from po_creation.schemas import (
+    POCreationDecision,
     Severity,
     ValidationIssue,
     ValidationReport,
 )
-from flip_to_po.validation import Validator, decide
+from po_creation.validation import Validator, decide
 
 
 def _report(*issues):
     return ValidationReport(issues=list(issues))
 
 
-def test_high_confidence_clean_auto_flips():
+def test_high_confidence_clean_auto_creates():
     res = decide(make_extraction(), _report(), DEFAULT_CONFIG)
-    assert res.decision is FlipDecision.AUTO_FLIP
+    assert res.decision is POCreationDecision.AUTO_CREATE
 
 
 def test_hard_failure_forces_review_even_at_high_confidence():
     issue = ValidationIssue(code="VENDOR_NOT_FOUND", severity=Severity.HARD, message="x")
     res = decide(make_extraction(), _report(issue), DEFAULT_CONFIG)
-    assert res.decision is FlipDecision.NEEDS_REVIEW
+    assert res.decision is POCreationDecision.NEEDS_REVIEW
 
 
 def test_low_confidence_routes_to_review():
     low = make_extraction([make_line(conf=0.5)])
     res = decide(low, _report(), DEFAULT_CONFIG)
-    assert res.decision is FlipDecision.NEEDS_REVIEW
+    assert res.decision is POCreationDecision.NEEDS_REVIEW
 
 
-def test_single_soft_issue_still_auto_flips():
+def test_single_soft_issue_still_auto_creates():
     soft = ValidationIssue(code="PRICE_OFF_CONTRACT", severity=Severity.SOFT, message="x")
     res = decide(make_extraction(), _report(soft), DEFAULT_CONFIG)
     # 0.98 * 0.95 = 0.931 >= 0.90
-    assert res.decision is FlipDecision.AUTO_FLIP
+    assert res.decision is POCreationDecision.AUTO_CREATE
 
 
 def test_two_soft_issues_drop_below_threshold():
@@ -50,7 +50,7 @@ def test_two_soft_issues_drop_below_threshold():
     s2 = ValidationIssue(code="UNIT_MISMATCH", severity=Severity.SOFT, message="y")
     res = decide(make_extraction(), _report(s1, s2), DEFAULT_CONFIG)
     # 0.98 * 0.95^2 = 0.884 < 0.90
-    assert res.decision is FlipDecision.NEEDS_REVIEW
+    assert res.decision is POCreationDecision.NEEDS_REVIEW
 
 
 # --------------------------------------------------------------------------- #
@@ -71,15 +71,15 @@ def _write_fixture(tmp_path):
     return trusted, attach
 
 
-def test_pipeline_auto_flips_clean_requisition(tmp_path):
+def test_pipeline_auto_creates_clean_requisition(tmp_path):
     trusted, attach = _write_fixture(tmp_path)
-    pipe = FlipPipeline(trusted_dir=trusted, config=DEFAULT_CONFIG)
+    pipe = POCreationPipeline(trusted_dir=trusted, config=DEFAULT_CONFIG)
     pr = PurchaseRequisition(
         pr_number="PR-1", requester="t", cost_center="CC-1",
         vendor_code="V-1", currency="USD", attachment_path=str(attach),
     )
     res = pipe.run(pr)
-    assert res.decision is FlipDecision.AUTO_FLIP
+    assert res.decision is POCreationDecision.AUTO_CREATE
     assert res.overall_confidence >= 0.9
     assert res.extraction.line_items[0].material_code.value == "VLV-100200"
 
@@ -87,5 +87,5 @@ def test_pipeline_auto_flips_clean_requisition(tmp_path):
 def test_audit_dict_is_serializable():
     res = decide(make_extraction(), _report(), DEFAULT_CONFIG)
     audit = res.to_audit_dict()
-    assert audit["decision"] == "AUTO_FLIP"
+    assert audit["decision"] == "AUTO_CREATE"
     json.dumps(audit)  # must not raise

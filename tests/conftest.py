@@ -10,14 +10,14 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from flip_to_po.schemas import (  # noqa: E402
+from po_creation.schemas import (  # noqa: E402
     Currency,
     ExtractedLineItem,
     ExtractionResult,
     FieldValue,
     PurchaseRequisition,
 )
-from flip_to_po.validation import (  # noqa: E402
+from po_creation.validation import (  # noqa: E402
     MaterialRecord,
     TrustedSources,
     VendorRecord,

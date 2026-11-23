@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from conftest import make_pr
 
-from flip_to_po.extraction.mock_llm import MockLLMExtractor
+from po_creation.extraction.mock_llm import MockLLMExtractor
 
 HEADER = "QUOTATION\nVendor: V-1\nCurrency: USD\n\n"
 

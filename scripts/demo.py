@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """End-to-end demo: run the pipeline and show the full audit trail for three
-representative requisitions — one auto-flipped, one blocked by a hard validation
+representative requisitions — one auto-created, one blocked by a hard validation
 rule, and one routed to review on low confidence.
 
 Run:  python scripts/demo.py
@@ -15,23 +15,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from flip_to_po import FlipPipeline, PurchaseRequisition  # noqa: E402
-from flip_to_po.config import DEFAULT_CONFIG  # noqa: E402
-from flip_to_po.schemas import FlipDecision, Severity  # noqa: E402
+from po_creation import POCreationPipeline, PurchaseRequisition  # noqa: E402
+from po_creation.config import DEFAULT_CONFIG  # noqa: E402
+from po_creation.schemas import POCreationDecision, Severity  # noqa: E402
 
 DATASET = ROOT / "data" / "synthetic" / "dataset.json"
 TRUSTED = ROOT / "data" / "trusted_sources"
 
 
 def _pick_examples(pipe, dataset):
-    """Choose one auto-flip, one hard-failure review, one low-confidence review."""
+    """Choose one auto-create, one hard-failure review, one low-confidence review."""
     picks: dict[str, tuple] = {}
     for entry in dataset:
         pr = PurchaseRequisition(**entry["pr"])
         res = pipe.run(pr)
-        if res.decision is FlipDecision.AUTO_FLIP and "auto" not in picks:
+        if res.decision is POCreationDecision.AUTO_CREATE and "auto" not in picks:
             picks["auto"] = (pr, res)
-        elif res.decision is FlipDecision.NEEDS_REVIEW:
+        elif res.decision is POCreationDecision.NEEDS_REVIEW:
             if res.validation.has_hard_failure and "hard" not in picks:
                 picks["hard"] = (pr, res)
             elif not res.validation.has_hard_failure and "soft" not in picks:
@@ -45,7 +45,7 @@ def main() -> None:
     if not DATASET.exists():
         sys.exit("Dataset not found. Run: python scripts/generate_synthetic_data.py")
 
-    pipe = FlipPipeline(trusted_dir=TRUSTED, config=DEFAULT_CONFIG)
+    pipe = POCreationPipeline(trusted_dir=TRUSTED, config=DEFAULT_CONFIG)
     dataset = json.loads(DATASET.read_text())
     picks = _pick_examples(pipe, dataset)
 
@@ -59,15 +59,15 @@ def main() -> None:
     console = Console()
     console.print(
         Panel.fit(
-            "[bold]Flip to PO[/bold] — GenAI purchase-order automation\n"
+            "[bold]Automated PO Creation[/bold] — GenAI purchase-order automation\n"
             f"backend: {DEFAULT_CONFIG.extraction_backend}   "
-            f"auto-flip threshold: {DEFAULT_CONFIG.auto_flip_threshold}",
+            f"auto-create threshold: {DEFAULT_CONFIG.auto_create_threshold}",
             border_style="cyan",
         )
     )
 
     labels = {
-        "auto": ("AUTO-FLIPPED (PO issued automatically)", "green"),
+        "auto": ("AUTO-CREATED (PO issued automatically)", "green"),
         "hard": ("ROUTED TO REVIEW (hard validation failure)", "red"),
         "soft": ("ROUTED TO REVIEW (low confidence)", "yellow"),
     }
