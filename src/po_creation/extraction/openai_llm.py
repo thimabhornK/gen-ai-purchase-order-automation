@@ -3,7 +3,7 @@
 This is real, working code; it just needs ``OPENAI_API_KEY`` and the ``openai``
 package. It is intentionally kept behind the same ``LLMExtractor`` interface as
 the mock so the pipeline, demo, and eval harness are identical regardless of
-backend. Select it with ``FLIP_EXTRACTION_BACKEND=openai``.
+backend. Select it with ``PO_EXTRACTION_BACKEND=openai``.
 """
 
 from __future__ import annotations

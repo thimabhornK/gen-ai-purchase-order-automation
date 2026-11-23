@@ -1,4 +1,4 @@
-"""Core data models for the Flip to PO pipeline.
+"""Core data models for the Automated PO Creation pipeline.
 
 These schemas are the contract between every stage of the system:
 
@@ -27,18 +27,18 @@ class Currency(str, Enum):
     EUR = "EUR"
 
 
-class FlipDecision(str, Enum):
+class POCreationDecision(str, Enum):
     """Terminal decision for a purchase requisition."""
 
-    AUTO_FLIP = "AUTO_FLIP"        # confidence + validation high enough to issue a PO automatically
+    AUTO_CREATE = "AUTO_CREATE"        # confidence + validation high enough to issue a PO automatically
     NEEDS_REVIEW = "NEEDS_REVIEW"  # routed to a human buyer
     REJECTED = "REJECTED"          # hard, unrecoverable failure (e.g. unknown vendor)
 
 
 class Severity(str, Enum):
     INFO = "INFO"
-    SOFT = "SOFT"   # lowers confidence but does not block an auto-flip on its own
-    HARD = "HARD"   # blocks auto-flip regardless of confidence
+    SOFT = "SOFT"   # lowers confidence but does not block an auto-create on its own
+    HARD = "HARD"   # blocks auto-create regardless of confidence
 
 
 # --------------------------------------------------------------------------- #
@@ -146,16 +146,16 @@ class ValidationReport(BaseModel):
 # --------------------------------------------------------------------------- #
 # Final decision
 # --------------------------------------------------------------------------- #
-class FlipResult(BaseModel):
+class POCreationResult(BaseModel):
     pr_number: str
-    decision: FlipDecision
+    decision: POCreationDecision
     overall_confidence: float = Field(ge=0.0, le=1.0)
     extraction: ExtractionResult
     validation: ValidationReport
     rationale: str
 
     def to_audit_dict(self) -> dict[str, Any]:
-        """Compact, log-friendly record (mirrors the production flip-log row)."""
+        """Compact, log-friendly record (mirrors the production PO-creation log row)."""
         return {
             "pr_number": self.pr_number,
             "decision": self.decision.value,

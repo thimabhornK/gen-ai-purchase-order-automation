@@ -5,7 +5,7 @@ value against the trusted masters and against internal arithmetic consistency.
 
 Severity policy (the part a reviewer should scrutinise):
 
-* HARD  -> blocks an automatic flip no matter how confident the model was.
+* HARD  -> blocks automatic PO creation no matter how confident the model was.
           Used for things that are unambiguously wrong or unsafe to act on:
           unknown/inactive vendor, unknown material, non-positive quantity, a
           line whose total does not equal qty x unit_price, or a failed parse.

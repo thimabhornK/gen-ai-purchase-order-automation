@@ -9,7 +9,7 @@ help:
 	@echo "  data      Generate the synthetic dataset and trusted sources"
 	@echo "  demo      Run the end-to-end CLI demo (3 representative requisitions)"
 	@echo "  eval      Run the evaluation harness (writes eval/results.json)"
-	@echo "  sweep     Sweep the auto-flip threshold (writes eval/sweep.json)"
+	@echo "  sweep     Sweep the auto-create threshold (writes eval/sweep.json)"
 	@echo "  test      Run the test suite"
 	@echo "  api       Start the FastAPI server (http://127.0.0.1:8000/docs)"
 	@echo "  clean     Remove generated data and caches"
@@ -33,7 +33,7 @@ test:
 	$(PYTHON) -m pytest
 
 api: data
-	$(PYTHON) -m uvicorn flip_to_po.api.app:app --reload
+	$(PYTHON) -m uvicorn po_creation.api.app:app --reload
 
 clean:
 	rm -rf data/synthetic eval/results.json eval/sweep.json

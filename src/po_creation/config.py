@@ -15,18 +15,18 @@ class PipelineConfig:
     # --- backend selection ------------------------------------------------- #
     # "mock" runs fully offline & deterministic. "openai" calls a real LLM.
     extraction_backend: str = field(
-        default_factory=lambda: os.getenv("FLIP_EXTRACTION_BACKEND", "mock")
+        default_factory=lambda: os.getenv("PO_EXTRACTION_BACKEND", "mock")
     )
     openai_model: str = field(
-        default_factory=lambda: os.getenv("FLIP_OPENAI_MODEL", "gpt-4o-mini")
+        default_factory=lambda: os.getenv("PO_OPENAI_MODEL", "gpt-4o-mini")
     )
 
     # --- decision gating --------------------------------------------------- #
-    # A PR is auto-flipped only if overall confidence clears this bar AND no
+    # A PR is auto-created only if overall confidence clears this bar AND no
     # HARD validation issue is present. This single number is the dial the
     # business turns to trade automation rate against precision.
-    auto_flip_threshold: float = field(
-        default_factory=lambda: float(os.getenv("FLIP_AUTO_THRESHOLD", "0.90"))
+    auto_create_threshold: float = field(
+        default_factory=lambda: float(os.getenv("PO_AUTO_THRESHOLD", "0.90"))
     )
 
     # Each SOFT validation issue applies a multiplicative penalty to confidence.

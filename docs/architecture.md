@@ -1,6 +1,6 @@
 # Architecture
 
-Flip to PO turns an unstructured vendor document into one of three outcomes —
+Automated PO Creation turns an unstructured vendor document into one of three outcomes —
 **auto-issue**, **route to a human**, or **reject** — by chaining four stages and
 gating the final decision on a calibrated confidence score plus hard business
 rules. The design goal is not "extract perfectly" (no extractor does); it is to
@@ -13,7 +13,7 @@ flowchart TD
     B --> C[2. LLM extraction<br/>text → typed fields<br/>each with a confidence]
     C --> D[3. Validation<br/>cross-check vs trusted sources]
     D --> E[4. Decision gating<br/>confidence × rules]
-    E -->|conf ≥ threshold<br/>and no hard issue| F[AUTO_FLIP<br/>issue PO automatically]
+    E -->|conf ≥ threshold<br/>and no hard issue| F[AUTO_CREATE<br/>issue PO automatically]
     E -->|hard issue, or<br/>conf < threshold| G[NEEDS_REVIEW<br/>send to a buyer]
     E -->|unrecoverable| H[REJECTED]
 
@@ -47,7 +47,7 @@ Two interchangeable backends implement `LLMExtractor.extract(pr, ocr_text)`:
   meaningful: confidence is correlated with correctness by construction.
 - `OpenAIExtractor` — a real backend (`prompts.py` holds the system prompt, a
   strict JSON schema, and a grounding/self-reported-confidence instruction). It
-  is selected with `FLIP_EXTRACTION_BACKEND=openai`; nothing else changes.
+  is selected with `PO_EXTRACTION_BACKEND=openai`; nothing else changes.
 
 Keeping both behind one interface means the prompt-engineering work is visible and
 runnable, while CI and `make eval` never need an API key.
@@ -78,13 +78,13 @@ Aggregates everything into one decision:
 overall_confidence = min(field confidences) × (1 − soft_penalty) ^ (#soft issues)
 
 if any HARD issue            -> NEEDS_REVIEW
-elif overall ≥ threshold     -> AUTO_FLIP
+elif overall ≥ threshold     -> AUTO_CREATE
 else                         -> NEEDS_REVIEW
 ```
 
 Taking the **minimum** field confidence (not the mean) means a single shaky field
 is enough to pull a requisition into review — the conservative choice for a system
-that issues real purchase orders. The result is a `FlipResult` carrying the
+that issues real purchase orders. The result is a `POCreationResult` carrying the
 decision, the aggregated confidence, a human-readable rationale, and a fully
 serializable audit trail (`to_audit_dict()`).
 
@@ -92,6 +92,6 @@ serializable audit trail (`to_audit_dict()`).
 
 Every stage is an abstract base class with a swappable implementation, every
 business-relevant number lives in `config.py` (so it can be reviewed and swept),
-and the same `FlipPipeline` object backs the demo, the FastAPI service, and the
+and the same `POCreationPipeline` object backs the demo, the FastAPI service, and the
 evaluation harness. That is what lets the project ship a real prompt-engineered
 LLM path while still running — and being measured — completely offline.

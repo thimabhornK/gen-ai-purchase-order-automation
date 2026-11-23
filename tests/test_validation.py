@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from conftest import make_extraction, make_line
 
-from flip_to_po.config import DEFAULT_CONFIG
-from flip_to_po.schemas import Severity
-from flip_to_po.validation import Validator
+from po_creation.config import DEFAULT_CONFIG
+from po_creation.schemas import Severity
+from po_creation.validation import Validator
 
 
 def codes(report, severity=None):
