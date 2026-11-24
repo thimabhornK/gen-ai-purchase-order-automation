@@ -5,8 +5,8 @@ Two interchangeable backends implement ``LLMExtractor``:
 * ``MockLLMExtractor`` — deterministic, offline, no API key. Parses the OCR text
   with tolerant heuristics and assigns a calibrated confidence to every field.
   This is what powers the demo, the tests, and the evaluation harness.
-* ``OpenAIExtractor`` — a real LLM call with a structured-output prompt. Shown to
-  demonstrate prompt design, grounding, and JSON-schema parsing; needs a key.
+* ``OpenAIExtractor`` — a real LLM call with a structured-output prompt,
+  grounding and JSON-schema parsing; needs a key.
 
 Keeping a single interface means the pipeline, the API, and the eval harness are
 backend-agnostic — you can A/B a new model by swapping one config value.

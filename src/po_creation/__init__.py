@@ -1,4 +1,4 @@
-"""Automated PO Creation — GenAI purchase-order automation (clean-room, synthetic-data demo).
+"""Automated PO Creation — GenAI purchase-order automation (synthetic data).
 
 Public API:
 

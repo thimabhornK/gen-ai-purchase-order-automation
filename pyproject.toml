@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "po-creation"
 version = "1.0.0"
-description = "GenAI purchase-order automation: OCR -> LLM extraction -> validation -> confidence-gated auto-issue (clean-room demo on synthetic data)."
+description = "GenAI purchase-order automation: OCR -> LLM extraction -> validation -> confidence-gated auto-issue (synthetic data)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
