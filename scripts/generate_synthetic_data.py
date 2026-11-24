@@ -188,7 +188,7 @@ def make_row_display(code, desc, qty, unit, unit_price, line_total, corruption, 
 
     elif corruption == "PRICE_TRANSPOSE":
         # Internally consistent but materially off the contract price -> caught by
-        # the contract-price deviation check (demonstrates that control working).
+        # the contract-price deviation check (checks that control works).
         wrong_val = perturb_value(unit_price, rng, 0.05, 0.15)
         d_price = fmt_money_plain(wrong_val)
         d_amount = fmt_money_plain(round(wrong_val * qty, 2))

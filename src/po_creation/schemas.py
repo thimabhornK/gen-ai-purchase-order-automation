@@ -155,7 +155,7 @@ class POCreationResult(BaseModel):
     rationale: str
 
     def to_audit_dict(self) -> dict[str, Any]:
-        """Compact, log-friendly record (mirrors the production PO-creation log row)."""
+        """Compact, log-friendly record (one row of the PO-creation log)."""
         return {
             "pr_number": self.pr_number,
             "decision": self.decision.value,
